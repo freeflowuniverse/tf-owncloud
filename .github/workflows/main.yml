@@ -40,4 +40,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: abouelsaad/owncloud:${{ steps.tagName.outputs.tag || env.DEFAULT_TAG }}
+          tags: threefolddev/tf-owncloud:${{ steps.tagName.outputs.tag || env.DEFAULT_TAG }}
