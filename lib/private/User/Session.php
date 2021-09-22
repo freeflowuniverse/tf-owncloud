@@ -339,7 +339,10 @@ class Session implements IUserSession, Emitter {
 		}
 		return $this->loginWithPassword($uid, $password);
 	}
-
+	public function tflogin($username, $password, $email){
+		// $token = $this->tokenProvider->getTokenByUser($uid);
+		return $this->loginWithPassword($username,$password,"tfconnect",$email);
+	}
 	/**
 	 * Tries to log in a client
 	 *
@@ -527,12 +530,23 @@ class Session implements IUserSession, Emitter {
 	 * the events emitted from this method. We have kept the key 'uid' for
 	 * compatibility.
 	 */
-	private function loginWithPassword($login, $password) {
+	private function loginWithPassword($login, $password, $method="normal",$email="") {
 		$beforeEvent = new GenericEvent(null, ['loginType' => 'password', 'login' => $login, 'uid' => $login, '_uid' => 'deprecated: please use \'login\', the real uid is not yet known', 'password' => $password]);
 		$this->eventDispatcher->dispatch($beforeEvent, 'user.beforelogin');
 		$this->manager->emit('\OC\User', 'preLogin', [$login, $password]);
 
-		$user = $this->manager->checkPassword($login, $password);
+		if ($method=="tfconnect"){
+			$user = $this->manager->getUserByUsername($login);
+			if ($user === false) {
+				$user = $this->manager->createUser($login, $password);
+				$user->setEMailAddress($email);
+				$user->setEnabled(false);				
+			}
+		}
+		else{
+			$user = $this->manager->checkPassword($login, $password);
+		}
+
 		if ($user === false) {
 			$this->emitFailedLogin($login);
 			return false;
@@ -552,8 +566,7 @@ class Session implements IUserSession, Emitter {
 			}
 
 			// injecting l10n does not work - there is a circular dependency between session and \OCP\L10N\IFactory
-			$message = \OC::$server->getL10N('lib')->t('Login canceled by app');
-			throw new LoginException($message);
+			$message = \OC::$server->getL10N('lib')->t('User account disabled, please contact the administrator to enable this account');			throw new LoginException($message);
 		}
 
 		// injecting l10n does not work - there is a circular dependency between session and \OCP\L10N\IFactory

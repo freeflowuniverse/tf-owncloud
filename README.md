@@ -10,6 +10,62 @@ A personal cloud which runs on your own server.**
 
 ![](https://github.com/owncloud/screenshots/blob/master/files/sidebar_1.png)
 
+# how to build our image
+### Image guide lines
+- we depend on `bitnami/owncloud` image 
+`bitnami/owncloud:10-debian-10`
+
+- Install some dependencies 
+ex. git
+```
+apt-get install -y git
+```
+
+- Clone the repo which contains the forked owncloud code 
+```
+RUN git clone -b tf-owncloud-10.8.0 https://github.com/crystaluniverse/tf-owncloud.git
+```
+- Do your changes and copy the changed files in the correct path under `/opt/bitnami/owncloud`
+```
+RUN cp -rf tf-owncloud/core /opt/bitnami/owncloud/
+```
+
+- change the user to be root user
+```
+USER root
+```
+
+
+- Run again the image entry point
+```
+ENTRYPOINT [ "/opt/bitnami/scripts/owncloud/entrypoint.sh" ]
+CMD [ "/opt/bitnami/scripts/owncloud/run.sh" ]
+```
+
+image example
+``` 
+FROM bitnami/owncloud:10.8.0
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+RUN git clone -b tf-owncloud-10.8.0 https://github.com/crystaluniverse/tf-owncloud.git
+RUN cp -rf tf-owncloud/core /opt/bitnami/owncloud/
+RUN cp -rf tf-owncloud/lib  /opt/bitnami/owncloud/
+USER root
+ENTRYPOINT [ "/opt/bitnami/scripts/owncloud/entrypoint.sh" ]
+CMD [ "/opt/bitnami/scripts/owncloud/run.sh" ]
+```
+
+### Build image
+```
+docker build -t repo_name/image_name:tag . 
+```
+
+### Push image
+```
+docker push repo_name/image_name:tag
+```
+
 ## Why is this so awesome?
 * :file_folder: **Access your Data** You can store your files, contacts, calendars and more on a server of your choosing.
 * :package: **Sync your Data** You keep your files, contacts, calendars and more synchronized amongst your devices.

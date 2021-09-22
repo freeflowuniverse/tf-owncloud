@@ -97,8 +97,7 @@ class CryptoWrapper {
 						"path" => $webRoot,
 						"domain" => '',
 						"secure" => $secureCookie,
-						"httponly" => true,
-						"samesite" => $samesite
+						"httponly" => true
 					];
 
 					\setcookie(self::COOKIE_NAME, $this->passphrase, $options);
