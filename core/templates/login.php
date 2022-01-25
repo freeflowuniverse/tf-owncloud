@@ -134,6 +134,19 @@ script('core', [
 		<input type="hidden" name="requesttoken" value="<?php p($_['requesttoken']) ?>">
 
 </form>
+<hr>
+<form method="post" name="login" autocapitalize="none">
+	<div>
+		<h5 style="color:white;">Or Login With</h5>
+	</div>
+	<div class="submit-wrap">
+		<input type="hidden" name="requesttoken" value="<?php p($_['requesttoken']) ?>">
+		<input type="hidden" name="type" value="tfconnect">
+		<button type="submit" id="threefold" class="login-button">
+			<span>TF Connect</span>
+		</button>
+	</div>
+</form>
 <?php if (!empty($_['alt_login'])) {
 				?>
 <form id="alternative-logins">

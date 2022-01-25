@@ -39,6 +39,7 @@ use OCP\ISession;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
+use \OCP\ILogger;
 
 class LoginController extends Controller {
 
@@ -62,6 +63,8 @@ class LoginController extends Controller {
 
 	/** @var ILicenseManager */
 	private $licenseManager;
+	private $OAUTH_URL;
+	private $REDIRECT_URL;
 
 	/**
 	 * @param string $appName
@@ -92,6 +95,8 @@ class LoginController extends Controller {
 		$this->urlGenerator = $urlGenerator;
 		$this->twoFactorManager = $twoFactorManager;
 		$this->licenseManager = $licenseManager;
+		$this->OAUTH_URL="https://oauth.threefold.io";
+		$this->REDIRECT_URL="https://login.threefold.me";
 	}
 
 	/**
@@ -231,7 +236,10 @@ class LoginController extends Controller {
 	 * @throws \OCP\PreConditionNotMetException
 	 * @throws \OC\User\LoginException
 	 */
-	public function tryLogin($user, $password, $redirect_url, $timezone = null) {
+	public function tryLogin($user, $password, $redirect_url, $type="normal", $timezone = null) {
+		if ($type=="tfconnect"){
+			$this->tryTFLogin();
+		}
 		$originalUser = $user;
 		// TODO: Add all the insane error handling
 		$loginResult = $this->userSession->login($user, $password);
@@ -243,6 +251,89 @@ class LoginController extends Controller {
 				$loginResult = $this->userSession->login($user, $password);
 			}
 		}
+		return $this->continueLogin($loginResult,$user,$password);
+
+	}
+
+	/**
+	 * @PublicPage
+	 * @UseSession
+	 *
+	 * @param string $user
+	 * @param string $password
+	 * @param string $redirect_url
+	 * @param string $timezone
+	 * @return RedirectResponse
+	 * @throws \OCP\PreConditionNotMetException
+	 * @throws \OC\User\LoginException
+	 */
+	public function tryTFLogin(){
+		$state = $this->random_str(32,"0123456789abcdef"); 
+		$this->session->set("tfstate",$state);
+		$ch = curl_init($this->OAUTH_URL . "/pubkey");
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		$res=curl_exec($ch);
+		curl_close($ch);
+		$res = json_decode($res, true);
+		$pubkey = $res['publickey'];
+		$data = [
+			"user" => true,
+			"email" => true
+		];
+		$appid = $this->request->getHeader("Host");
+		$params=[
+			"state" => $state,
+			"appid" => $appid,
+			"scope" => json_encode($data), 
+			"redirecturl" =>"/index.php/callback",
+			"publickey" => utf8_encode($pubkey),
+		];
+		$params = http_build_query($params);
+		$url = $this->REDIRECT_URL.'?'.$params;
+		header("Location: $url");
+		exit();
+
+	}
+
+	/**
+	 * @PublicPage
+	 * @UseSession
+	 *
+	 * @param string $user
+	 * @param string $password
+	 * @param string $redirect_url
+	 * @param string $timezone
+	 * @return RedirectResponse
+	 * @throws \OCP\PreConditionNotMetException
+	 * @throws \OC\User\LoginException
+	 */
+	public function callback(){
+		$session = $this->session->get('tfstate');
+		$signAttempt = $this->request->getParam("signedAttempt","");
+		$data = [
+			"signedAttempt"=>$signAttempt,
+			"state" => $session
+		];
+		$url = $this->OAUTH_URL . "/verify";
+		$ch = curl_init($this->OAUTH_URL . "/verify");
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		$res=curl_exec($ch);
+		curl_close($ch);
+
+		$res = json_decode($res,true);
+		$user = $res['username'];
+		$email = $res['email'];
+		$password = $this->random_str(10);
+		$loginResult = $this->userSession->tflogin($user, $password,$email);		
+		return $this->continueLogin($loginResult,$user,$password);
+	}
+
+	protected function continueLogin($loginResult,$user,$password){
 		if ($loginResult !== true) {
 			$this->session->set('loginMessages', [
 				['invalidpassword'], []
@@ -306,5 +397,32 @@ class LoginController extends Controller {
 	 */
 	public function getSession() {
 		return $this->session;
+	}
+
+	/**
+	 * Generate a random string, using a cryptographically secure 
+	 * pseudorandom number generator (random_int)
+	 * 
+	 * For PHP 7, random_int is a PHP core function
+	 * For PHP 5.x, depends on https://github.com/paragonie/random_compat
+	 * 
+	 * @param int $length      How many characters do we want?
+	 * @param string $keyspace A string of all possible characters
+	 *                         to select from
+	 * @return string
+	 */
+	protected function random_str(
+		$length,
+		$keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	) {
+		$str = '';
+		$max = mb_strlen($keyspace, '8bit') - 1;
+		if ($max < 1) {
+			throw new Exception('$keyspace must be at least two characters long');
+		}
+		for ($i = 0; $i < $length; ++$i) {
+			$str .= $keyspace[random_int(0, $max)];
+		}
+		return $str;
 	}
 }
