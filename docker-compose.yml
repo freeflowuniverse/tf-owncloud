@@ -30,8 +30,8 @@ services:
       - OWNCLOUD_MYSQL_UTF8MB4=true
       # ------------------------------------------------------------------------
       # Admin account settings
-      - OWNCLOUD_ADMIN_USERNAME=${OWNCLOUD_USERNAME}
-      - OWNCLOUD_ADMIN_PASSWORD=${OWNCLOUD_PASSWORD}
+      - OWNCLOUD_ADMIN_USERNAME=${OWNCLOUD_ADMIN_USERNAME}
+      - OWNCLOUD_ADMIN_PASSWORD=${OWNCLOUD_ADMIN_PASSWORD}
       # ------------------------------------------------------------------------
       # cache backend settings
       - OWNCLOUD_REDIS_ENABLED=true
@@ -41,19 +41,14 @@ services:
       - OWNCLOUD_MAIL_SMTP_AUTH=true # enable SMTP authentication
       - OWNCLOUD_MAIL_SMTP_AUTH_TYPE=LOGIN # LOGIN or PLAIN
       - OWNCLOUD_MAIL_SMTP_MODE=smtp # smtp or php
-      - OWNCLOUD_MAIL_SMTP_SECURE=tls # tls, ssl, or none
-      - OWNCLOUD_MAIL_SMTP_HOST=${OWNCLOUD_SMTP_HOST}
-      - OWNCLOUD_MAIL_SMTP_NAME=${OWNCLOUD_SMTP_USER}
-      - OWNCLOUD_MAIL_SMTP_PASSWORD=${OWNCLOUD_SMTP_PASSWORD}
-      - OWNCLOUD_MAIL_SMTP_PORT=${OWNCLOUD_SMTP_PORT_NUMBER}
-      #- OWNCLOUD_MAIL_DOMAIN
-      #- OWNCLOUD_MAIL_FROM_ADDRESS
+      - OWNCLOUD_MAIL_SMTP_SECURE=${OWNCLOUD_MAIL_SMTP_SECURE} # tls, ssl, or none
+      - OWNCLOUD_MAIL_SMTP_HOST=${OWNCLOUD_MAIL_SMTP_HOST}
+      - OWNCLOUD_MAIL_SMTP_NAME=${OWNCLOUD_MAIL_SMTP_NAME}
+      - OWNCLOUD_MAIL_SMTP_PASSWORD=${OWNCLOUD_MAIL_SMTP_PASSWORD}
+      - OWNCLOUD_MAIL_SMTP_PORT=${OWNCLOUD_MAIL_SMTP_PORT}
+      - OWNCLOUD_MAIL_DOMAIN=${OWNCLOUD_MAIL_DOMAIN}
+      - OWNCLOUD_MAIL_FROM_ADDRESS=${OWNCLOUD_MAIL_FROM_ADDRESS}
       #- OWNCLOUD_MAIL_SMTP_TIMEOUT
-      # ------------------------------------------------------------------------
-      # ensure samesite cookie is not strict
-      # otherwise, tfconnect won't work as cookies won't be available on redirects from tfconnect website
-      # hence the state won't be correct
-      - OWNCLOUD_HTTP_COOKIE_SAMESITE=Lax
     healthcheck:
       test: ["CMD", "/usr/bin/healthcheck"]
       interval: 30s
