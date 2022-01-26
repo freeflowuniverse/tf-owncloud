@@ -18,7 +18,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     env:
-      DEFAULT_TAG: latest
+      DEFAULT_TAG: test
     steps:
       - name: Checkout
         uses: actions/checkout@v2
