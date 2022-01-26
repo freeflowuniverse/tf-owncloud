@@ -251,7 +251,7 @@ class LoginController extends Controller {
 				$loginResult = $this->userSession->login($user, $password);
 			}
 		}
-		return $this->continueLogin($loginResult,$user,$password);
+		return $this->continueLogin($loginResult,$user,$password, $redirect_url, $type, $timezone);
 
 	}
 
@@ -309,6 +309,7 @@ class LoginController extends Controller {
 	 * @throws \OC\User\LoginException
 	 */
 	public function callback(){
+		$type = "tfconnect";
 		$session = $this->session->get('tfstate');
 		$signAttempt = $this->request->getParam("signedAttempt","");
 		$data = [
@@ -330,10 +331,10 @@ class LoginController extends Controller {
 		$email = $res['email'];
 		$password = $this->random_str(10);
 		$loginResult = $this->userSession->tflogin($user, $password,$email);		
-		return $this->continueLogin($loginResult,$user,$password);
+		return $this->continueLogin($loginResult,$user,$password, null, $type, null );
 	}
 
-	protected function continueLogin($loginResult,$user,$password){
+	protected function continueLogin($loginResult,$user,$password, $redirect_url, $type, $timezone){
 		if ($loginResult !== true) {
 			$this->session->set('loginMessages', [
 				['invalidpassword'], []
@@ -353,8 +354,12 @@ class LoginController extends Controller {
 		$userObject = $this->userSession->getUser();
 		// TODO: remove password checks from above and let the user session handle failures
 		// requires https://github.com/owncloud/core/pull/24616
-		$this->userSession->createSessionToken($this->request, $userObject->getUID(), $user, $password);
-
+		if ($type == "tfconnect") {
+			$this->userSession->createSessionToken($this->request, $userObject->getUID(), $user, null);
+		}
+		else {
+			$this->userSession->createSessionToken($this->request, $userObject->getUID(), $user, $password);
+		}
 		// User has successfully logged in, now remove the password reset link, when it is available
 		$this->config->deleteUserValue($userObject->getUID(), 'owncloud', 'lostpassword');
 
