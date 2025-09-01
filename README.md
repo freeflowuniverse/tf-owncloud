@@ -41,3 +41,6 @@ https://www.transifex.com/projects/p/owncloud/
 
 For detailed information about translations:
 https://doc.owncloud.org/server/10.4/developer_manual/core/translation.html
+
+
+<!-- Security scan triggered at 2025-09-02 01:58:57 -->
